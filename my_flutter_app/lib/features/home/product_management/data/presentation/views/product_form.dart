@@ -5,8 +5,13 @@ import 'product_list_view.dart';
 
 class ProductForm extends StatefulWidget {
   final List<Product> productList;
+  final List<String> regionList; // Pass the list of regions
 
-  ProductForm({Key? key, required this.productList}) : super(key: key);
+  ProductForm({
+    Key? key,
+    required this.productList,
+    required this.regionList, // Required parameter for regions
+  }) : super(key: key);
 
   @override
   _ProductFormState createState() => _ProductFormState();
@@ -20,7 +25,12 @@ class _ProductFormState extends State<ProductForm> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   final TextEditingController imageController = TextEditingController();
-  final TextEditingController regionIdController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
+  final TextEditingController regionNameController = TextEditingController();
+  final TextEditingController zipCodeController = TextEditingController();
+
+  String? _selectedRegion; // Variable to store selected region
+  bool _showRegionAttributes = false; // Flag to show/hide region attributes
 
   void _addProduct() {
     if (_formKey.currentState!.validate()) {
@@ -30,7 +40,8 @@ class _ProductFormState extends State<ProductForm> {
         description: descriptionController.text,
         price: double.parse(priceController.text),
         imageUrl: imageController.text,
-        regionId: int.parse(regionIdController.text),
+        regionId: widget.regionList
+            .indexOf(_selectedRegion!), // Get the index of the selected region
       );
 
       setState(() {
@@ -38,13 +49,21 @@ class _ProductFormState extends State<ProductForm> {
       });
 
       // Clear the form after submission
-      idController.clear();
-      nameController.clear();
-      descriptionController.clear();
-      priceController.clear();
-      imageController.clear();
-      regionIdController.clear();
+      _clearForm();
     }
+  }
+
+  void _clearForm() {
+    idController.clear();
+    nameController.clear();
+    descriptionController.clear();
+    priceController.clear();
+    imageController.clear();
+    countryController.clear();
+    regionNameController.clear();
+    zipCodeController.clear();
+    _selectedRegion = null; // Clear the selected region
+    _showRegionAttributes = false; // Hide region attributes
   }
 
   @override
@@ -89,13 +108,48 @@ class _ProductFormState extends State<ProductForm> {
                 validator: (value) =>
                     FormValidators.validateString(value, 'Image URL'),
               ),
-              TextFormField(
-                controller: regionIdController,
-                decoration: InputDecoration(labelText: 'Region ID'),
-                keyboardType: TextInputType.number,
+              // Dropdown for selecting region
+              DropdownButtonFormField<String>(
+                value: _selectedRegion,
+                decoration: InputDecoration(labelText: 'Select Region'),
+                items: widget.regionList.map((region) {
+                  return DropdownMenuItem<String>(
+                    value: region,
+                    child: Text(region),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedRegion = value; // Set the selected region
+                    // Show region attributes if a region is selected
+                    _showRegionAttributes = value != null;
+                  });
+                },
                 validator: (value) =>
-                    FormValidators.validateInteger(value, 'Region ID'),
+                    FormValidators.validateDropdown(value, 'region'),
               ),
+              if (_showRegionAttributes) ...[
+                // Region attributes fields
+                TextFormField(
+                  controller: countryController,
+                  decoration: InputDecoration(labelText: 'Country'),
+                  validator: (value) =>
+                      FormValidators.validateString(value, 'Country'),
+                ),
+                TextFormField(
+                  controller: regionNameController,
+                  decoration: InputDecoration(labelText: 'Region Name'),
+                  validator: (value) =>
+                      FormValidators.validateString(value, 'Region Name'),
+                ),
+                TextFormField(
+                  controller: zipCodeController,
+                  decoration: InputDecoration(labelText: 'Zip Code'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      FormValidators.validateInteger(value, 'Zip Code'),
+                ),
+              ],
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _addProduct,
